@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from promql_builder.aggregations import Count, Max, Sum
 from promql_builder.functions import Changes, Increase, LabelReplace, Vector
 from promql_builder.models import GrafanaVar, Label
@@ -21,10 +23,19 @@ def test_sumby_count_le() -> None:
     query = Count(_sum)
 
     assert (
-        str(query)
+        query.to_promql(compact=True)
         == 'count(sum(kube_pod_container_status_running{namespace=~"${namespace}",'
-        ' owner=~"${cluster}"}) by (pod) >= 1)'
+        'owner=~"${cluster}"}) by (pod) >= 1)'
     )
+    assert str(query) == dedent("""\
+        count(
+            sum(
+                kube_pod_container_status_running{
+                    namespace=~"${namespace}",
+                    owner=~"${cluster}"
+                }
+            ) by (pod) >= 1
+        )""")
 
 
 def test_sum_increase() -> None:
@@ -38,9 +49,20 @@ def test_sum_increase() -> None:
     )
 
     assert (
-        str(query) == "sum(increase(kube_pod_container_status_restarts_total"
-        '{owner=~"${cluster}", namespace=~"${namespace}"}[${__range}]))'
+        query.to_promql(compact=True)
+        == "sum(increase(kube_pod_container_status_restarts_total"
+        '{owner=~"${cluster}",namespace=~"${namespace}"}[${__range}]))'
     )
+
+    assert str(query) == dedent("""\
+            sum(
+                increase(
+                    kube_pod_container_status_restarts_total{
+                        owner=~"${cluster}",
+                        namespace=~"${namespace}"
+                    }[${__range}]
+                )
+            )""")
 
 
 def test_sum_or_vector() -> None:
@@ -51,8 +73,16 @@ def test_sum_or_vector() -> None:
     query = Sum(kube_cronjob_status) | Vector(0)
 
     assert (
-        str(query)
+        query.to_promql(compact=True)
         == 'sum(kube_cronjob_status_active{namespace=~"${namespace}"}) or vector(0)'
+    )
+    assert str(query) == dedent(
+        """\
+            sum(
+                kube_cronjob_status_active{
+                    namespace=~"${namespace}"
+                }
+            ) or vector(0)"""
     )
 
 
@@ -65,8 +95,19 @@ def test_count_or_vector() -> None:
     ) | Vector(0)
 
     assert (
-        str(query) == 'count(kube_cronjob_status_active{owner=~"${cluster}", '
+        query.to_promql(compact=True)
+        == 'count(kube_cronjob_status_active{owner=~"${cluster}",'
         'namespace=~"${namespace}"}) or vector(0)'
+    )
+
+    assert str(query) == dedent(
+        """\
+            count(
+                kube_cronjob_status_active{
+                    owner=~"${cluster}",
+                    namespace=~"${namespace}"
+                }
+            ) or vector(0)"""
     )
 
 
@@ -77,15 +118,30 @@ def test_sum_multiply_divide() -> None:
     sum_requests = (
         Sum(cpu_requests.labels(owner=GrafanaVar("cluster"), resource="cpu")) * 100
     )
-
     sum_capacity = Sum(cpu_capacity.labels(owner=GrafanaVar("cluster"), resource="cpu"))
-
     query = sum_requests / sum_capacity
 
     assert (
-        str(query) == '(sum(kube_pod_container_resource_requests{owner="${cluster}",'
-        ' resource="cpu"}) * 100) /'
-        ' sum(kube_node_status_capacity{owner="${cluster}", resource="cpu"})'
+        query.to_promql(compact=True)
+        == '(sum(kube_pod_container_resource_requests{owner="${cluster}",resource="cpu"}) * 100) / sum(kube_node_status_capacity{owner="${cluster}",resource="cpu"})'  # noqa: E501
+    )
+    assert str(query) == dedent(
+        """\
+        (
+            sum(
+                kube_pod_container_resource_requests{
+                    owner="${cluster}",
+                    resource="cpu"
+                }
+            ) * 100
+        )
+        /
+        sum(
+            kube_node_status_capacity{
+                owner="${cluster}",
+                resource="cpu"
+            }
+        )"""
     )
 
 
@@ -113,42 +169,42 @@ def test_max_by_multiple_divide_label_replace() -> None:
             unit="core",
         ),
         "container",
-        "(.+)",
         "container_name",
-        "$1",
     )
 
     max_kube = Max(label_replaced).by("container_name") * 100
 
     query = max_docker / max_kube
 
-    assert str(query) == compact(
-        """
+    # TODO: Improve formatting for label_replace
+    assert str(query) == dedent(
+        """\
             (
                 max(
                     docker_container_cpu_usage_percent{
-                        owner="${cluster}",%
-                        namespace="${namespace}",%
+                        owner="${cluster}",
+                        namespace="${namespace}",
                         container_name="${container_name}"
                     }
                 ) by (container_name) * 100
-            )%
-            /%
+            )
+            /
             (
                 max(
                     label_replace(
                         kube_pod_container_resource_limits{
-                            namespace=~"${namespace}",%
-                            container=~"${container_name}",%
-                            owner="${cluster}",%
+                            namespace=~"${namespace}",
+                            container=~"${container_name}",
+                            owner="${cluster}",
                             unit="core"
-                        }
-                        , "container_name", "$1"
-                        , "container", "(.+)"
+                        },
+                        "container_name",
+                        "$1",
+                        "container",
+                        "(.+)"
                     )
                 ) by (container_name) * 100
-            )""",
-        sub="%: ",
+            )"""
     )
 
 
@@ -176,36 +232,45 @@ def test_sum_by_multiple_labels_multiply_divide_label_replace() -> None:
 
     query = max_docker / max_kube
 
-    assert str(query) == compact(
-        """
+    assert str(query) == dedent(
+        """\
         (
             max(
                 docker_container_cpu_usage_percent{
-                    namespace=~"${namespace}",%
-                    container_name=~"${container_name}",%
+                    namespace=~"${namespace}",
+                    container_name=~"${container_name}",
                     owner="${cluster}"
                 }
-            ) by (pod_name, container_name) * 100
-        )%
-        /%
+            ) by (
+                pod_name,
+                container_name
+            ) * 100
+        )
+        /
         (
             max(
                 label_replace(
                     label_replace(
                         kube_pod_container_resource_limits{
-                            namespace=~"${namespace}",%
-                            owner="${cluster}",%
+                            namespace=~"${namespace}",
+                            owner="${cluster}",
                             unit="core"
-                        }
-                        , "container_name", "$1"
-                        , "container", "(.+)"
-                    )
-                    , "pod_name", "$1"
-                    , "pod", "(.+)"
+                        },
+                        "container_name",
+                        "$1",
+                        "container",
+                        "(.+)"
+                    ),
+                    "pod_name",
+                    "$1",
+                    "pod",
+                    "(.+)"
                 )
-            ) by (pod_name, container_name) * 100
-        )""",
-        sub="%: ",
+            ) by (
+                pod_name,
+                container_name
+            ) * 100
+        )"""
     )
 
 
@@ -236,25 +301,24 @@ def test_sum_increase_multiply_on_by() -> None:
         > 0
     )
 
-    assert str(query) == compact(
-        """
+    # TODO: Improve formatting
+    assert str(query) == dedent(
+        """\
         sum(
             increase(
                 kube_pod_container_status_restarts_total{
-                    owner=~"${cluster}",%
-                    namespace=~"${namespace}",%
+                    owner=~"${cluster}",
+                    namespace=~"${namespace}",
                     reason!~"Completed"
-                }
-            [${__range}])%
-            * on (namespace, pod, container) group_left (reason)%
+                }[${__range}]
+            )
+            * on (namespace, pod, container) group_left (reason)
             kube_pod_container_status_last_terminated_reason{
-                owner=~"${cluster}",%
-                namespace=~"${namespace}",%
+                owner=~"${cluster}",
+                namespace=~"${namespace}",
                 reason!~"Completed"
             }
-        ) by (container, reason) > 0
-    """,
-        sub="%: ",
+        ) by (container, reason) > 0"""
     )
 
 
@@ -284,28 +348,27 @@ def test_other():
     max_sre_discovery = Max(sre_discovery | sre_discovery_shifted).by("version")
     query = Changes(max_sre_discovery["1m":]) > 0
 
-    assert str(query) == compact(
-        """
-    changes(
-        (
-            max(
-                sre_discovery{
-                    application=~\".*my-service.*\",%
-                    application!~\".*excluded-service.*\",%
-                    owner=\"prod-cluster\",%
-                    namespace=\"my-namespace\"
-                } or%
-                (
+    assert str(query) == dedent(
+        """\
+        changes(
+            (
+                max(
                     sre_discovery{
-                        application=~\".*my-service.*\",%
-                        application!~\".*excluded-service.*\",%
-                        owner=\"prod-cluster\",%
+                        application=~\".*my-service.*\",
+                        application!~\".*excluded-service.*\",
+                        owner=\"prod-cluster\",
                         namespace=\"my-namespace\"
-                    } offset 1h * 0
-                )
-            ) by (version)
-        )[1m:]
-    ) > 0
-    """,
-        sub="%: ",
+                    }
+                    or
+                    (
+                        sre_discovery{
+                            application=~\".*my-service.*\",
+                            application!~\".*excluded-service.*\",
+                            owner=\"prod-cluster\",
+                            namespace=\"my-namespace\"
+                        } offset 1h * 0
+                    )
+                ) by (version)
+            )[1m:]
+        ) > 0"""
     )

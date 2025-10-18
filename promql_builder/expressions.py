@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, Unpack
 
-from promql_builder.models import Label
+from promql_builder.models import Label, PromQlElement, ToPromqlParams
 from promql_builder.modifiers import (
     AggregationModifier,
     By,
@@ -13,7 +13,12 @@ from promql_builder.modifiers import (
     On,
     Without,
 )
-from promql_builder.util import to_promql
+from promql_builder.util import (
+    DEFAULT_NO_WRAP_LIMIT,
+    parenthesize,
+    promql_join,
+    to_promql,
+)
 from promql_builder.vectors import InstantVector
 
 type LabelGroupSelector = str | Label
@@ -38,7 +43,7 @@ class BinaryScalarExpression:
         return f"{to_promql(self.left)} {self.operator} {to_promql(self.right)}"
 
 
-class BinaryVectorExpression(InstantVector):
+class BinaryVectorExpression(InstantVector, PromQlElement):
     def __init__(
         self,
         left: InstantVectorExpression,
@@ -92,29 +97,39 @@ class BinaryVectorExpression(InstantVector):
     def group_right(self, *labels: Label | str) -> "BinaryVectorExpression":
         return self._copy(group=GroupRight(*labels))
 
-    def to_promql(self) -> str:
-        left_str = to_promql(self._left)
-        if isinstance(self._left, BinaryVectorExpression):
-            left_str = f"({left_str})"
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
+        compact = kwargs.get("compact", False)
 
-        right_str = to_promql(self._right)
+        left_str = to_promql(self._left, **kwargs)
+        if isinstance(self._left, BinaryVectorExpression):
+            left_str = parenthesize(left_str, **kwargs)
+
+        right_str = to_promql(self._right, **kwargs)
         if isinstance(self._right, BinaryVectorExpression):
-            right_str = f"({right_str})"
+            right_str = parenthesize(right_str, **kwargs)
 
         op_str = self._operator
         if self._labels:
-            op_str += " " + self._labels.to_promql()
+            op_str += " " + self._labels.to_promql(**kwargs)
 
         if self._group:
-            op_str += " " + self._group.to_promql()
+            op_str += " " + self._group.to_promql(**kwargs)
 
-        return f"{left_str} {op_str} {right_str}"
+        joiner = "\n"
+        if (
+            compact
+            or len(left_str) < DEFAULT_NO_WRAP_LIMIT
+            or len(right_str) < DEFAULT_NO_WRAP_LIMIT
+        ):
+            joiner = " "
+
+        return joiner.join([left_str, op_str, right_str])
 
     def __str__(self) -> str:
         return self.to_promql()
 
 
-class Aggregation(InstantVector):
+class Aggregation(InstantVector, PromQlElement):
     def __init__(
         self,
         name: str,
@@ -137,12 +152,12 @@ class Aggregation(InstantVector):
     def without(self, *labels: LabelGroupSelector) -> "Aggregation":
         return self._copy(Without(*labels))
 
-    def to_promql(self) -> str:
-        args_str = ", ".join(to_promql(arg) for arg in self._args)
-        result = f"{self.name}({args_str})"
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
+        args_str = promql_join(self._args, parens="()", **kwargs)
+        result = f"{self.name}{args_str}"
 
         if self._group:
-            result += " " + self._group.to_promql()
+            result += " " + self._group.to_promql(**kwargs)
 
         return result
 
@@ -150,14 +165,14 @@ class Aggregation(InstantVector):
         return self.to_promql()
 
 
-class Function(InstantVector):
+class Function(InstantVector, PromQlElement):
     def __init__(self, name: str, *args: Any) -> None:
         self.name = name
         self.args = args
 
-    def to_promql(self) -> str:
-        args_str = ", ".join(to_promql(arg) for arg in self.args)
-        return f"{self.name}({args_str})"
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
+        args_str = promql_join(self.args, parens="()", **kwargs)
+        return f"{self.name}{args_str}"
 
     def __str__(self) -> str:
         return self.to_promql()

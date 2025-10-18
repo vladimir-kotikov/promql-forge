@@ -1,16 +1,18 @@
 import itertools
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal, Unpack, cast
 
 from promql_builder.models import (
     Duration,
     GrafanaVar,
     Label,
     LabelSelector,
+    PromQlElement,
     Subquery,
+    ToPromqlParams,
 )
-from promql_builder.util import to_promql
+from promql_builder.util import parenthesize, promql_join, to_promql
 
 if TYPE_CHECKING:
     from promql_builder.expressions import (
@@ -128,7 +130,6 @@ class Metric(InstantVector):
         labels: tuple[LabelSelector, ...] = tuple(),
         /,
         offset: Duration | None = None,
-        # TODO: check names of fixed instants
         instant: int | float | Literal["start", "end"] | None = None,
     ):
         self._name = name
@@ -157,7 +158,6 @@ class Metric(InstantVector):
 
         return Metric(self._name, self._labels, offset=duration, instant=self._instant)
 
-    # TODO: refine instant literals names
     def at(self, timestamp: int | float | Literal["start", "end"]) -> "Metric":
         if self._instant is not None:
             raise ValueError("Instant is already set")
@@ -173,16 +173,20 @@ class Metric(InstantVector):
     def __getattr__(self, name: str) -> Label:
         return Label(name)
 
-    def to_promql(self) -> str:
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
         promql = self._name
         if self._labels:
-            promql += "{" + ", ".join(s.to_promql() for s in self._labels) + "}"
+            promql += promql_join(self._labels, parens="{}", **kwargs)
 
         if self._offset is not None:
             promql += f" offset {to_promql(self._offset)}"
 
         if self._instant is not None:
-            promql += f" @ {self._instant}"
+            instant_str = str(self._instant)
+            if self._instant in ["start", "end"]:
+                instant_str = f"{self._instant}()"
+
+            promql += f" @ {instant_str}"
 
         return promql
 
@@ -191,16 +195,16 @@ class Metric(InstantVector):
 
 
 @dataclass
-class RangeVector:
+class RangeVector(PromQlElement):
     expression: InstantVector
     range: Duration | Subquery
 
-    def to_promql(self) -> str:
-        expr_str = to_promql(self.expression)
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
+        expr_str = to_promql(self.expression, **kwargs)
         if not isinstance(self.expression, str | Metric):
-            expr_str = f"({expr_str})"
+            expr_str = parenthesize(expr_str, **kwargs)
 
-        return f"{expr_str}[{to_promql(self.range)}]"
+        return f"{expr_str}[{to_promql(self.range, **kwargs)}]"
 
     def __str__(self) -> str:
         return self.to_promql()

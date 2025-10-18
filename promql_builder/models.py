@@ -33,9 +33,9 @@
 # binary scalar expression)
 
 import re
-from typing import Literal
+from typing import Literal, Protocol, Unpack, runtime_checkable
 
-from promql_builder.util import to_promql
+from promql_builder.util import ToPromqlParams, promql_join, to_promql
 
 type LabelOperator = Literal["=", "!=", "=~", "!~"]
 type Duration = str | int | float | GrafanaVar
@@ -62,6 +62,11 @@ def validate_duration(range: Duration, allow_negative: bool = False) -> None:
     raise ValueError(f"Invalid range: {range}")
 
 
+@runtime_checkable
+class PromQlElement(Protocol):
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str: ...
+
+
 class GrafanaVarMeta(type):
     """
     Allows creating GrafanaVar instances via attribute access, e.g. GrafanaVar.var_name
@@ -71,18 +76,18 @@ class GrafanaVarMeta(type):
         return cls(item)
 
 
-class GrafanaVar(metaclass=GrafanaVarMeta):
+class GrafanaVar(PromQlElement):
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def to_promql(self) -> str:
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
         return f"${{{self.name}}}"
 
     def __str__(self) -> str:
         return self.to_promql()
 
 
-class Label:
+class Label(PromQlElement):
     def __init__(self, name: str) -> None:
         self.name = name
 
@@ -110,11 +115,11 @@ class Label:
 
         return LabelSelector(self, "!~", value)
 
-    def to_promql(self) -> str:
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
         return self.name
 
 
-class LabelSelector:
+class LabelSelector(PromQlElement):
     label: Label
     op: LabelOperator
     value: str | GrafanaVar
@@ -126,11 +131,11 @@ class LabelSelector:
         self.op = op
         self.value = value
 
-    def to_promql(self) -> str:
-        return f'{self.label.name}{self.op}"{to_promql(self.value)}"'
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
+        return f'{self.label.name}{self.op}"{to_promql(self.value, **kwargs)}"'
 
 
-class LabelModifier:
+class LabelModifier(PromQlElement):
     name: str
 
     def __init_subclass__(cls, name: str) -> None:
@@ -142,12 +147,12 @@ class LabelModifier:
 
         self._labels = labels
 
-    def to_promql(self) -> str:
-        labels_str = ", ".join(to_promql(label) for label in self._labels)
-        return f"{self.name} ({labels_str})"
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
+        labels_str = promql_join(self._labels, parens="()", **kwargs)
+        return f"{self.name} {labels_str}"
 
 
-class Subquery:
+class Subquery(PromQlElement):
     def __init__(self, window: Duration, resolution: Duration | None = None) -> None:
         self.window = window
         self.resolution = resolution
@@ -156,6 +161,6 @@ class Subquery:
         if self.resolution is not None:
             validate_duration(self.resolution, allow_negative=True)
 
-    def to_promql(self) -> str:
+    def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
         resolution_str = "" if self.resolution is None else f":{self.resolution}"
         return f"{self.window}:{resolution_str}"

@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 import pytest
 
 from promql_builder.functions import Delta
@@ -12,7 +14,12 @@ def test_simple_metric():
 def test_metric_with_simple_labels():
     query = Metric("my_other_metric").labels(foo="bar", baz="quux")
 
-    assert str(query) == 'my_other_metric{foo="bar", baz="quux"}'
+    assert query.to_promql(compact=True) == 'my_other_metric{foo="bar",baz="quux"}'
+    assert str(query) == dedent("""\
+        my_other_metric{
+            foo="bar",
+            baz="quux"
+        }""")
 
 
 def test_metric_with_labels_as_properties():
@@ -25,9 +32,16 @@ def test_metric_with_labels_as_properties():
     )
 
     assert (
-        str(query)
-        == 'my_other_metric{foo="bar", baz!="quux", env=~"prod", version!~"v1.*"}'
+        query.to_promql(compact=True)
+        == 'my_other_metric{foo="bar",baz!="quux",env=~"prod",version!~"v1.*"}'
     )
+    assert str(query) == dedent("""\
+            my_other_metric{
+                foo="bar",
+                baz!="quux",
+                env=~"prod",
+                version!~"v1.*"
+            }""")
 
 
 def test_metric_with_variables_labels():
@@ -39,8 +53,16 @@ def test_metric_with_variables_labels():
     )
 
     assert (
-        str(query) == 'my_other_metric{baz!="${quux}", env=~"${env}.env", foo="${bar}"}'
+        query.to_promql(compact=True)
+        == 'my_other_metric{baz!="${quux}",env=~"${env}.env",foo="${bar}"}'
     )
+
+    assert str(query) == dedent("""\
+        my_other_metric{
+            baz!="${quux}",
+            env=~"${env}.env",
+            foo="${bar}"
+        }""")
 
 
 @pytest.mark.parametrize(
