@@ -1,6 +1,6 @@
-# Public API — import everything from promql_builder directly
+# Public API — import everything from promql_forge directly
 
-from promql_builder.aggregations import (
+from promql_forge.aggregations import (
     Avg,
     Bottomk,
     Count,
@@ -15,7 +15,7 @@ from promql_builder.aggregations import (
     Sum,
     Topk,
 )
-from promql_builder.functions import (
+from promql_forge.functions import (
     Abs,
     Absent,
     AbsentOverTime,
@@ -87,9 +87,9 @@ from promql_builder.functions import (
     Vector,
     Year,
 )
-from promql_builder.models import GrafanaVar, Label
-from promql_builder.util import to_promql
-from promql_builder.vectors import Metric
+from promql_forge.models import GrafanaVar, Label
+from promql_forge.util import to_promql
+from promql_forge.vectors import Metric
 
 __all__ = [
     "Abs",

@@ -1,8 +1,8 @@
 import pytest
 
-from promql_builder.functions import HistogramFraction, HistogramQuantile
-from promql_builder.models import Subquery
-from promql_builder.vectors import Metric
+from promql_forge.functions import HistogramFraction, HistogramQuantile
+from promql_forge.models import Subquery
+from promql_forge.vectors import Metric
 from tests.helpers import assert_promql
 
 

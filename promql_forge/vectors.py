@@ -3,7 +3,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Unpack, cast
 
-from promql_builder.models import (
+from promql_forge.models import (
     BinaryVectorOperator,
     Duration,
     GrafanaVar,
@@ -15,10 +15,10 @@ from promql_builder.models import (
     ToPromqlParams,
     validate_duration,
 )
-from promql_builder.util import parenthesize, promql_join, to_promql
+from promql_forge.util import parenthesize, promql_join, to_promql
 
 if TYPE_CHECKING:
-    from promql_builder.expressions import (
+    from promql_forge.expressions import (
         BinaryScalarExpression,
         BinaryVectorExpression,
     )
@@ -35,7 +35,7 @@ class VectorBinaryOperationsMixin:
         other: AnyExpression,
         operator: BinaryVectorOperator,
     ) -> "BinaryVectorExpression":
-        from promql_builder.expressions import BinaryVectorExpression
+        from promql_forge.expressions import BinaryVectorExpression
 
         return BinaryVectorExpression(
             left=cast(InstantVectorExpression, self),

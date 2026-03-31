@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["**"]  # Tags are handled by publish.yml
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for hatch-vcs version detection
+      - uses: astral-sh/setup-uv@v5
+      - run: make install
+      - run: make lint
+      - run: make test
+      - run: make build

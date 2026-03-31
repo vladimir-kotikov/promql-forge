@@ -1,9 +1,9 @@
 from typing import overload
 
-from promql_builder.expressions import Function
-from promql_builder.models import GrafanaVar
-from promql_builder.util import quote
-from promql_builder.vectors import InstantVector, RangeVector
+from promql_forge.expressions import Function
+from promql_forge.models import GrafanaVar
+from promql_forge.util import quote
+from promql_forge.vectors import InstantVector, RangeVector
 
 type NumericParam = int | float | GrafanaVar
 

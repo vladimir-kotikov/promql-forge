@@ -1,9 +1,9 @@
 from textwrap import dedent
 
-from promql_builder.aggregations import Count, Max, Sum
-from promql_builder.functions import Changes, Increase, LabelReplace, Vector
-from promql_builder.models import GrafanaVar, Label
-from promql_builder.vectors import Metric
+from promql_forge.aggregations import Count, Max, Sum
+from promql_forge.functions import Changes, Increase, LabelReplace, Vector
+from promql_forge.models import GrafanaVar, Label
+from promql_forge.vectors import Metric
 
 
 def test_sumby_count_le() -> None:

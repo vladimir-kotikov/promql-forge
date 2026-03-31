@@ -2,9 +2,9 @@ from textwrap import dedent
 
 import pytest
 
-from promql_builder.functions import Delta
-from promql_builder.models import GrafanaVar
-from promql_builder.vectors import Metric
+from promql_forge.functions import Delta
+from promql_forge.models import GrafanaVar
+from promql_forge.vectors import Metric
 
 
 def test_simple_metric():

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Unpack
 
-from promql_builder.models import (
+from promql_forge.models import (
     BinaryScalarOperator,
     BinaryVectorOperator,
     Label,
@@ -10,13 +10,13 @@ from promql_builder.models import (
     Scalar,
     ToPromqlParams,
 )
-from promql_builder.util import (
+from promql_forge.util import (
     DEFAULT_NO_WRAP_LIMIT,
     parenthesize,
     promql_join,
     to_promql,
 )
-from promql_builder.vectors import InstantVector
+from promql_forge.vectors import InstantVector
 
 type LabelGroupSelector = str | Label
 type ScalarExpression = Scalar | BinaryScalarExpression

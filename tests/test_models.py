@@ -1,4 +1,4 @@
-from promql_builder.models import GrafanaVar
+from promql_forge.models import GrafanaVar
 
 
 def test_grafana_var__renders():

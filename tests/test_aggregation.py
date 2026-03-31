@@ -1,6 +1,6 @@
 import pytest
 
-from promql_builder.aggregations import (
+from promql_forge.aggregations import (
     Avg,
     Bottomk,
     CountValues,
@@ -12,7 +12,7 @@ from promql_builder.aggregations import (
     Sum,
     Topk,
 )
-from promql_builder.vectors import Metric
+from promql_forge.vectors import Metric
 from tests.helpers import assert_promql
 
 

@@ -1,4 +1,4 @@
-from promql_builder.models import PromQlElement
+from promql_forge.models import PromQlElement
 
 
 def assert_promql(expr: PromQlElement, expected: str, **kwargs) -> None:

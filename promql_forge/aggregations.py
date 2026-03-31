@@ -1,9 +1,9 @@
 from typing import overload
 
-from promql_builder.expressions import Aggregation, AggregationModifier, By, Without
-from promql_builder.models import GrafanaVar, Label
-from promql_builder.util import quote
-from promql_builder.vectors import InstantVector
+from promql_forge.expressions import Aggregation, AggregationModifier, By, Without
+from promql_forge.models import GrafanaVar, Label
+from promql_forge.util import quote
+from promql_forge.vectors import InstantVector
 
 type IntParam = int | GrafanaVar
 type NumericParam = int | float | GrafanaVar

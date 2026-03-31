@@ -1,10 +1,38 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
 [project]
-name = "promql-builder"
-version = "0.1.0"
-description = "Add your description here"
+name = "promql-forge"
+dynamic = ["version"]
+description = "A Python library for building PromQL queries programmatically"
 readme = "README.md"
 requires-python = ">=3.13"
+license = { file = "LICENSE" }
+keywords = [
+    "prometheus",
+    "promql",
+    "monitoring",
+    "observability",
+    "query-builder",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/vladimir-kotikov/promql-forge"
+Issues = "https://github.com/vladimir-kotikov/promql-forge/issues"
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "RUF"]
@@ -17,7 +45,4 @@ reportIncompatibleMethodOverride = false
 reportInconsistentOverload = false
 
 [dependency-groups]
-dev = [
-    "pytest>=8.4.2",
-    "pytest-cov>=7.1.0",
-]
+dev = ["pytest>=8.4.2", "pytest-cov>=7.1.0"]

@@ -35,7 +35,7 @@
 import re
 from typing import Literal, Protocol, Unpack, _ProtocolMeta, runtime_checkable
 
-from promql_builder.util import ToPromqlParams, promql_join, to_promql
+from promql_forge.util import ToPromqlParams, promql_join, to_promql
 
 type LabelOperator = Literal["=", "!=", "=~", "!~"]
 type Duration = str | int | float | GrafanaVar

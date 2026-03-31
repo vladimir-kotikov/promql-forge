@@ -13,7 +13,7 @@ class ToPromqlParams(TypedDict, total=False):
 
 
 def to_promql(expr: Any, **kwargs: Unpack[ToPromqlParams]) -> str:
-    from promql_builder.models import PromQlElement
+    from promql_forge.models import PromQlElement
 
     if isinstance(expr, PromQlElement):
         return expr.to_promql(**kwargs)
