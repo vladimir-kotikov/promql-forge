@@ -33,7 +33,7 @@
 # binary scalar expression)
 
 import re
-from typing import Literal, Protocol, Unpack, runtime_checkable
+from typing import Literal, Protocol, Unpack, _ProtocolMeta, runtime_checkable
 
 from promql_builder.util import ToPromqlParams, promql_join, to_promql
 
@@ -74,7 +74,7 @@ class PromQlElement(Protocol):
     def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str: ...
 
 
-class GrafanaVarMeta(type):
+class GrafanaVarMeta(_ProtocolMeta):
     """
     Allows creating GrafanaVar instances via attribute access, e.g. GrafanaVar.var_name
     """
@@ -83,7 +83,7 @@ class GrafanaVarMeta(type):
         return cls(item)
 
 
-class GrafanaVar(PromQlElement):
+class GrafanaVar(PromQlElement, metaclass=GrafanaVarMeta):
     def __init__(self, name: str) -> None:
         self.name = name
 
