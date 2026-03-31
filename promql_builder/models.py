@@ -39,6 +39,13 @@ from promql_builder.util import ToPromqlParams, promql_join, to_promql
 
 type LabelOperator = Literal["=", "!=", "=~", "!~"]
 type Duration = str | int | float | GrafanaVar
+type BinaryArithmeticOperator = Literal["+", "-", "*", "/", "%", "^"]
+type BinaryComparisonOperator = Literal[">", "<", ">=", "<=", "=", "!="]
+type BinaryScalarOperator = BinaryArithmeticOperator | BinaryComparisonOperator
+type BinaryVectorOperator = (
+    BinaryArithmeticOperator | BinaryComparisonOperator | Literal["and", "or", "unless"]
+)
+type Scalar = float | int
 
 
 range_re = re.compile(r"^[0-9]+(?:ms|s|m|h|d|w|y)$")

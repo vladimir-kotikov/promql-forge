@@ -1,7 +1,14 @@
 from dataclasses import dataclass
-from typing import Any, Literal, Unpack
+from typing import Any, Unpack
 
-from promql_builder.models import Label, PromQlElement, ToPromqlParams
+from promql_builder.models import (
+    BinaryScalarOperator,
+    BinaryVectorOperator,
+    Label,
+    PromQlElement,
+    Scalar,
+    ToPromqlParams,
+)
 from promql_builder.modifiers import (
     AggregationModifier,
     By,
@@ -22,13 +29,6 @@ from promql_builder.util import (
 from promql_builder.vectors import InstantVector
 
 type LabelGroupSelector = str | Label
-type BinaryArithmeticOperator = Literal["+", "-", "*", "/", "%", "^"]
-type BinaryComparisonOperator = Literal[">", "<", ">=", "<=", "=", "!="]
-type BinaryScalarOperator = BinaryArithmeticOperator | BinaryComparisonOperator
-type BinaryVectorOperator = (
-    BinaryArithmeticOperator | BinaryComparisonOperator | Literal["and", "or", "unless"]
-)
-type Scalar = float | int
 type ScalarExpression = Scalar | BinaryScalarExpression
 type InstantVectorExpression = InstantVector | str
 

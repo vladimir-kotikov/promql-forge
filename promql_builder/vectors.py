@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Unpack, cast
 
 from promql_builder.models import (
+    BinaryVectorOperator,
     Duration,
     GrafanaVar,
     Label,
     LabelSelector,
     PromQlElement,
+    Scalar,
     Subquery,
     ToPromqlParams,
 )
@@ -21,13 +23,6 @@ if TYPE_CHECKING:
     )
 
 
-type BinaryArithmeticOperator = Literal["+", "-", "*", "/", "%", "^"]
-type BinaryComparisonOperator = Literal[">", "<", ">=", "<=", "=", "!="]
-type BinaryScalarOperator = BinaryArithmeticOperator | BinaryComparisonOperator
-type BinaryVectorOperator = (
-    BinaryArithmeticOperator | BinaryComparisonOperator | Literal["and", "or", "unless"]
-)
-type Scalar = float | int
 type InstantVectorExpression = InstantVector | str
 type ScalarExpression = Scalar | BinaryScalarExpression
 type AnyExpression = InstantVectorExpression | ScalarExpression
