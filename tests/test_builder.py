@@ -65,14 +65,7 @@ def test_metric_with_variables_labels():
         }""")
 
 
-@pytest.mark.parametrize(
-    "expression",
-    [
-        "foo",
-        Metric("foo"),
-        Metric("foo"),
-    ],
-)
+@pytest.mark.parametrize("expression", ["foo", Metric("foo")])
 def test_simple_function(expression):
     assert str(Delta(expression)) == "delta(foo)"
 
@@ -87,3 +80,28 @@ def test_instant_vector__with_offset(offset):
 def test_instant_vector__with_range():
     assert str(Metric("foo").over("10m")) == "foo[10m]"
     assert str(Metric("foo")["10m"]) == "foo[10m]"
+
+
+def test_instant_vector__over_invalid_duration_raises():
+    with pytest.raises(ValueError):
+        Metric("foo").over("not_a_duration")
+
+
+def test_metric_at_timestamp():
+    assert str(Metric("foo").at(1234567890)) == "foo @ 1234567890"
+    assert str(Metric("foo") @ 1234567890) == "foo @ 1234567890"
+
+
+def test_metric_at_start_end():
+    assert str(Metric("foo").at("start")) == "foo @ start()"
+    assert str(Metric("foo").at("end")) == "foo @ end()"
+
+
+def test_metric_at_duplicate_raises():
+    with pytest.raises(ValueError):
+        Metric("foo").at(100).at(200)
+
+
+def test_metric_offset_duplicate_raises():
+    with pytest.raises(ValueError):
+        Metric("foo").offset("5m").offset("10m")
