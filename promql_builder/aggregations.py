@@ -3,6 +3,7 @@ from typing import overload
 from promql_builder.expressions import Aggregation
 from promql_builder.models import GrafanaVar, Label
 from promql_builder.modifiers import AggregationModifier, By, Without
+from promql_builder.util import quote
 from promql_builder.vectors import InstantVector
 
 type IntParam = int | GrafanaVar
@@ -285,29 +286,29 @@ def Limitk(
 
 @overload
 def CountValues(
-    val: NumericParam,
+    val: str | GrafanaVar,
     vector: InstantVectorExpression,
     *,
     by: LabelGroupSelectors | None = None,
 ) -> Aggregation: ...
 @overload
 def CountValues(
-    val: NumericParam,
+    val: str | GrafanaVar,
     vector: InstantVectorExpression,
     *,
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation: ...
 def CountValues(
-    val: NumericParam,
+    val: str | GrafanaVar,
     vector: InstantVectorExpression,
     by: LabelGroupSelectors | None = None,
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
         "count_values",
-        val,
+        quote(val),
         vector,
-        to_aggregation_modifier(by=by, without=without),
+        group=to_aggregation_modifier(by=by, without=without),
     )
 
 

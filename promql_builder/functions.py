@@ -81,14 +81,14 @@ def HistogramCount(vector: InstantVector) -> Function:
 
 
 def HistogramFraction(lower: NumericParam, upper: NumericParam, vector: InstantVector):
-    return Function("histogram_fraction", vector, lower, upper)
+    return Function("histogram_fraction", lower, upper, vector)
 
 
 def HistogramQuantile(phi: NumericParam, vector: InstantVector):
     if isinstance(phi, (int, float)) and not (0 <= phi <= 1):
         raise ValueError("Quantile must be between 0 and 1")
 
-    return Function("histogram_quantile", vector, phi)
+    return Function("histogram_quantile", phi, vector)
 
 
 def HistogramStddev(vector: InstantVector) -> Function:
