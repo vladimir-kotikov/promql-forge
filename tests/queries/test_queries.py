@@ -6,11 +6,6 @@ from promql_builder.models import GrafanaVar, Label
 from promql_builder.vectors import Metric
 
 
-def compact(s: str, sub: str = ":") -> str:
-    old, new = sub.split(":", maxsplit=1)
-    return "".join(line.strip().replace(old, new) for line in s.strip().splitlines())
-
-
 def test_sumby_count_le() -> None:
     containers_running = Metric("kube_pod_container_status_running")
 
@@ -25,7 +20,7 @@ def test_sumby_count_le() -> None:
     assert (
         query.to_promql(compact=True)
         == 'count(sum(kube_pod_container_status_running{namespace=~"${namespace}",'
-        'owner=~"${cluster}"}) by (pod) >= 1)'
+        'owner=~"${cluster}"}) by(pod) >= 1)'
     )
     assert str(query) == dedent("""\
         count(
@@ -241,10 +236,7 @@ def test_sum_by_multiple_labels_multiply_divide_label_replace() -> None:
                     container_name=~"${container_name}",
                     owner="${cluster}"
                 }
-            ) by (
-                pod_name,
-                container_name
-            ) * 100
+            ) by (pod_name, container_name) * 100
         )
         /
         (
@@ -266,10 +258,7 @@ def test_sum_by_multiple_labels_multiply_divide_label_replace() -> None:
                     "pod",
                     "(.+)"
                 )
-            ) by (
-                pod_name,
-                container_name
-            ) * 100
+            ) by (pod_name, container_name) * 100
         )"""
     )
 
@@ -312,7 +301,7 @@ def test_sum_increase_multiply_on_by() -> None:
                     reason!~"Completed"
                 }[${__range}]
             )
-            * on (namespace, pod, container) group_left (reason)
+            * on(namespace, pod, container) group_left(reason)
             kube_pod_container_status_last_terminated_reason{
                 owner=~"${cluster}",
                 namespace=~"${namespace}",
@@ -320,20 +309,6 @@ def test_sum_increase_multiply_on_by() -> None:
             }
         ) by (container, reason) > 0"""
     )
-
-
-def test___():
-    """
-    deriv(
-        (
-            sum(
-                kafka_consumergroup_lag{
-                    owner="prod-kafka-cluster",
-                    consumergroup=~"my-consumer-group-.*"
-                }
-            )
-        )[10m:]
-    )"""
 
 
 def test_other():

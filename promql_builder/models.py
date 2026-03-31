@@ -144,19 +144,21 @@ class LabelSelector(PromQlElement):
 
 class LabelModifier(PromQlElement):
     name: str
+    no_whitespace_before_parens: bool
 
-    def __init_subclass__(cls, name: str) -> None:
+    def __init_subclass__(
+        cls, name: str, no_whitespace_before_parens: bool = False
+    ) -> None:
         cls.name = name
+        cls.no_whitespace_before_parens = no_whitespace_before_parens
 
     def __init__(self, *labels: Label | str) -> None:
-        if not labels:
-            raise ValueError(f"{self.name} modifier requires at least one label")
-
         self._labels = labels
 
     def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
-        labels_str = promql_join(self._labels, parens="()", **kwargs)
-        return f"{self.name} {labels_str}"
+        labels_str = promql_join(self._labels, parens="()", no_wrap=True, **kwargs)  # pyright: ignore[reportCallIssue]
+        space = "" if kwargs.get("compact") or self.no_whitespace_before_parens else " "
+        return f"{self.name}{space}{labels_str}"
 
 
 class Subquery(PromQlElement):

@@ -1,8 +1,7 @@
 from typing import overload
 
-from promql_builder.expressions import Aggregation
+from promql_builder.expressions import Aggregation, AggregationModifier, By, Without
 from promql_builder.models import GrafanaVar, Label
-from promql_builder.modifiers import AggregationModifier, By, Without
 from promql_builder.util import quote
 from promql_builder.vectors import InstantVector
 
@@ -52,7 +51,7 @@ def Sum(
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
-        "sum", vector, group=to_aggregation_modifier(by=by, without=without)
+        "sum", vector, aggregate=to_aggregation_modifier(by=by, without=without)
     )
 
 
@@ -73,7 +72,7 @@ def Avg(
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
-        "avg", vector, group=to_aggregation_modifier(by=by, without=without)
+        "avg", vector, aggregate=to_aggregation_modifier(by=by, without=without)
     )
 
 
@@ -94,7 +93,7 @@ def Min(
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
-        "min", vector, group=to_aggregation_modifier(by=by, without=without)
+        "min", vector, aggregate=to_aggregation_modifier(by=by, without=without)
     )
 
 
@@ -115,7 +114,7 @@ def Max(
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
-        "max", vector, group=to_aggregation_modifier(by=by, without=without)
+        "max", vector, aggregate=to_aggregation_modifier(by=by, without=without)
     )
 
 
@@ -136,7 +135,7 @@ def Group(
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
-        "group", vector, group=to_aggregation_modifier(by=by, without=without)
+        "group", vector, aggregate=to_aggregation_modifier(by=by, without=without)
     )
 
 
@@ -157,7 +156,7 @@ def Count(
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
-        "count", vector, group=to_aggregation_modifier(by=by, without=without)
+        "count", vector, aggregate=to_aggregation_modifier(by=by, without=without)
     )
 
 
@@ -178,7 +177,7 @@ def Stddev(
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
-        "stddev", vector, group=to_aggregation_modifier(by=by, without=without)
+        "stddev", vector, aggregate=to_aggregation_modifier(by=by, without=without)
     )
 
 
@@ -199,7 +198,7 @@ def Stdvar(
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
-        "stdvar", vector, group=to_aggregation_modifier(by=by, without=without)
+        "stdvar", vector, aggregate=to_aggregation_modifier(by=by, without=without)
     )
 
 
@@ -224,7 +223,7 @@ def Topk(
     without: LabelGroupSelectors | None = None,
 ) -> Aggregation:
     return Aggregation(
-        "topk", k, vector, group=to_aggregation_modifier(by=by, without=without)
+        "topk", k, vector, aggregate=to_aggregation_modifier(by=by, without=without)
     )
 
 
@@ -252,7 +251,7 @@ def Bottomk(
         "bottomk",
         k,
         vector,
-        group=to_aggregation_modifier(by=by, without=without),
+        aggregate=to_aggregation_modifier(by=by, without=without),
     )
 
 
@@ -280,7 +279,7 @@ def Limitk(
         "limitk",
         k,
         vector,
-        group=to_aggregation_modifier(by=by, without=without),
+        aggregate=to_aggregation_modifier(by=by, without=without),
     )
 
 
@@ -308,7 +307,7 @@ def CountValues(
         "count_values",
         quote(val),
         vector,
-        group=to_aggregation_modifier(by=by, without=without),
+        aggregate=to_aggregation_modifier(by=by, without=without),
     )
 
 
@@ -339,5 +338,5 @@ def Quantile(
         "quantile",
         phi,
         vector,
-        group=to_aggregation_modifier(by=by, without=without),
+        aggregate=to_aggregation_modifier(by=by, without=without),
     )

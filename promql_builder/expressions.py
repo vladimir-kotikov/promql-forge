@@ -5,20 +5,10 @@ from promql_builder.models import (
     BinaryScalarOperator,
     BinaryVectorOperator,
     Label,
+    LabelModifier,
     PromQlElement,
     Scalar,
     ToPromqlParams,
-)
-from promql_builder.modifiers import (
-    AggregationModifier,
-    By,
-    ExpressionGroupModifier,
-    ExpressionLabelsModifier,
-    GroupLeft,
-    GroupRight,
-    Ignoring,
-    On,
-    Without,
 )
 from promql_builder.util import (
     DEFAULT_NO_WRAP_LIMIT,
@@ -31,6 +21,43 @@ from promql_builder.vectors import InstantVector
 type LabelGroupSelector = str | Label
 type ScalarExpression = Scalar | BinaryScalarExpression
 type InstantVectorExpression = InstantVector | str
+type AggregationModifier = By | Without
+type ExpressionMatchModifier = On | Ignoring
+type ExpressionGroupModifier = GroupLeft | GroupRight
+
+
+class By(LabelModifier, name="by"): ...
+
+
+class Without(LabelModifier, name="without"): ...
+
+
+class On(
+    LabelModifier,
+    name="on",
+    no_whitespace_before_parens=True,
+): ...
+
+
+class Ignoring(
+    LabelModifier,
+    name="ignoring",
+    no_whitespace_before_parens=True,
+): ...
+
+
+class GroupLeft(
+    LabelModifier,
+    name="group_left",
+    no_whitespace_before_parens=True,
+): ...
+
+
+class GroupRight(
+    LabelModifier,
+    name="group_right",
+    no_whitespace_before_parens=True,
+): ...
 
 
 @dataclass
@@ -50,35 +77,33 @@ class BinaryVectorExpression(InstantVector, PromQlElement):
         operator: BinaryVectorOperator,
         right: InstantVectorExpression | ScalarExpression,
         *,
-        labels: ExpressionLabelsModifier | None = None,
+        match: ExpressionMatchModifier | None = None,
         group: ExpressionGroupModifier | None = None,
     ) -> None:
         self._left: InstantVectorExpression = left
         self._operator: BinaryVectorOperator = operator
         self._right: InstantVectorExpression | ScalarExpression = right
-        self._labels = labels
+        self._match = match
         self._group = group
 
     def _copy(self, **updated: Any) -> "BinaryVectorExpression":
-        for _mod in ("on", "ignoring"):
-            if _mod in updated and self._labels is not None:
-                raise ValueError(
-                    f"Cannot use '{_mod}' on an expression that "
-                    "has labels already defined"
-                )
+        if "match" in updated and self._match is not None:
+            raise ValueError(
+                "Cannot set label matching on an expression that "
+                "already has label matching defined"
+            )
 
-        for _mod in ("group_left", "group_right"):
-            if _mod in updated and self._group is not None:
-                raise ValueError(
-                    f"Cannot use '{_mod}' on an expression that "
-                    "has group modifier already defined"
-                )
+        if "group" in updated and self._group is not None:
+            raise ValueError(
+                "Cannot set group modifier on an expression that "
+                "already has a group modifier defined"
+            )
 
         kwargs = {
             "left": self._left,
             "operator": self._operator,
             "right": self._right,
-            "labels": self._labels,
+            "match": self._match,
             "group": self._group,
         }
         kwargs.update(updated)
@@ -86,10 +111,10 @@ class BinaryVectorExpression(InstantVector, PromQlElement):
         return BinaryVectorExpression(**kwargs)
 
     def on(self, *labels: Label | str) -> "BinaryVectorExpression":
-        return self._copy(labels=On(*labels))
+        return self._copy(match=On(*labels))
 
     def ignoring(self, *labels: Label | str) -> "BinaryVectorExpression":
-        return self._copy(labels=Ignoring(*labels))
+        return self._copy(match=Ignoring(*labels))
 
     def group_left(self, *labels: Label | str) -> "BinaryVectorExpression":
         return self._copy(group=GroupLeft(*labels))
@@ -109,8 +134,8 @@ class BinaryVectorExpression(InstantVector, PromQlElement):
             right_str = parenthesize(right_str, **kwargs)
 
         op_str = self._operator
-        if self._labels:
-            op_str += " " + self._labels.to_promql(**kwargs)
+        if self._match:
+            op_str += " " + self._match.to_promql(**kwargs)
 
         if self._group:
             op_str += " " + self._group.to_promql(**kwargs)
@@ -134,17 +159,17 @@ class Aggregation(InstantVector, PromQlElement):
         self,
         name: str,
         *args: Any,
-        group: AggregationModifier | None = None,
+        aggregate: AggregationModifier | None = None,
     ) -> None:
         self.name = name
         self._args = args
-        self._group = group
+        self._aggregate = aggregate
 
-    def _copy(self, group: AggregationModifier) -> "Aggregation":
-        if self._group:
+    def _copy(self, aggregate: AggregationModifier) -> "Aggregation":
+        if self._aggregate:
             raise ValueError("Cannot group an aggregation that already has grouping")
 
-        return Aggregation(self.name, *self._args, group=group)
+        return Aggregation(self.name, *self._args, aggregate=aggregate)
 
     def by(self, *labels: LabelGroupSelector) -> "Aggregation":
         return self._copy(By(*labels))
@@ -153,13 +178,17 @@ class Aggregation(InstantVector, PromQlElement):
         return self._copy(Without(*labels))
 
     def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
+        modifier_first = kwargs.get("modifier_first", False)
         args_str = promql_join(self._args, parens="()", **kwargs)
-        result = f"{self.name}{args_str}"
 
-        if self._group:
-            result += " " + self._group.to_promql(**kwargs)
+        if self._aggregate:
+            group_str = self._aggregate.to_promql(**kwargs)
+            if modifier_first:
+                return f"{self.name} {group_str} {args_str}"
+            else:
+                return f"{self.name}{args_str} {group_str}"
 
-        return result
+        return f"{self.name}{args_str}"
 
     def __str__(self) -> str:
         return self.to_promql()

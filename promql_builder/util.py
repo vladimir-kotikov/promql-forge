@@ -8,15 +8,14 @@ DEFAULT_NO_WRAP_LIMIT = 15
 class ToPromqlParams(TypedDict, total=False):
     compact: bool
     indent: int
+    no_wrap: bool
+    modifier_first: bool
 
 
 def to_promql(expr: Any, **kwargs: Unpack[ToPromqlParams]) -> str:
     from promql_builder.models import PromQlElement
 
     if isinstance(expr, PromQlElement):
-        return expr.to_promql(**kwargs)
-
-    if hasattr(expr, "to_promql"):
         return expr.to_promql(**kwargs)
 
     if isinstance(expr, str):
@@ -40,7 +39,9 @@ def promql_join(
 
     compact = kwargs.get("compact")
     # For short lists, use a more compact representation
-    no_wrap = sum(len(s) for s in str_items) < DEFAULT_NO_WRAP_LIMIT
+    no_wrap = sum(len(s) for s in str_items) <= DEFAULT_NO_WRAP_LIMIT or kwargs.get(
+        "no_wrap", False
+    )
     joiner = "," if compact else ",\n"
     if no_wrap and not compact:
         joiner = ", "
