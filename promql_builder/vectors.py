@@ -13,6 +13,7 @@ from promql_builder.models import (
     Scalar,
     Subquery,
     ToPromqlParams,
+    validate_duration,
 )
 from promql_builder.util import parenthesize, promql_join, to_promql
 
@@ -145,6 +146,7 @@ class Metric(InstantVector):
         )
 
     def over(self, range: Duration) -> "RangeVector":
+        validate_duration(range)
         return RangeVector(self, range)
 
     def offset(self, duration: Duration) -> "Metric":

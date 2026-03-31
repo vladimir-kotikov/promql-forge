@@ -169,5 +169,5 @@ class Subquery(PromQlElement):
             validate_duration(self.resolution, allow_negative=True)
 
     def to_promql(self, **kwargs: Unpack[ToPromqlParams]) -> str:
-        resolution_str = "" if self.resolution is None else f":{self.resolution}"
+        resolution_str = "" if self.resolution is None else str(self.resolution)
         return f"{self.window}:{resolution_str}"
